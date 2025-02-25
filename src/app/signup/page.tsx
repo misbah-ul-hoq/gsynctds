@@ -1,7 +1,7 @@
 "use client";
 import { useForm } from "react-hook-form";
-import { useState } from "react";
 import Link from "next/link";
+import { useAddSignUpDataMutation } from "@/redux/features/auth/authApiSlice";
 
 interface SignupFormInputs {
   name: string;
@@ -16,12 +16,11 @@ const SignupPage: React.FC = () => {
     formState: { errors },
   } = useForm<SignupFormInputs>();
 
-  const [loading, setLoading] = useState<boolean>(false);
+  const [addSignUpData, { isLoading }] = useAddSignUpDataMutation();
 
   const onSubmit = async (data: SignupFormInputs) => {
-    setLoading(true);
     console.log(data);
-    setTimeout(() => setLoading(false), 2000); // Simulate API call
+    addSignUpData(data).then((res) => console.log(res));
   };
 
   return (
@@ -60,7 +59,7 @@ const SignupPage: React.FC = () => {
             )}
           </div>
           <div>
-            <label className="label text-base-content">Password</label>
+            <label className="text-sm">Password</label>
             <input
               type="password"
               placeholder="Enter your password"
@@ -80,9 +79,9 @@ const SignupPage: React.FC = () => {
           <button
             type="submit"
             className="btn btn-primary w-full"
-            disabled={loading}
+            disabled={isLoading}
           >
-            {loading ? "Signing up..." : "Sign Up"}
+            {isLoading ? "Signing up..." : "Sign Up"}
           </button>
         </form>
         <p className="text-center mt-3 text-sm flex items-center justify-center lg:mt-4">

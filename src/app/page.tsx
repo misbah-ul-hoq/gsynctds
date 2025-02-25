@@ -11,7 +11,9 @@ export default function Home() {
     const token = localStorage.getItem("authToken");
     setIsAuthenticated(token);
   }, [isAuthenticated]);
-
+  if (isAuthenticated === undefined) {
+    return null;
+  }
   if (isAuthenticated === null) {
     redirect("/login");
   }
