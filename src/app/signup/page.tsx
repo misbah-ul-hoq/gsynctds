@@ -2,6 +2,7 @@
 import { useForm } from "react-hook-form";
 import Link from "next/link";
 import { useAddSignUpDataMutation } from "@/redux/features/auth/authApiSlice";
+import Swal from "sweetalert2";
 
 interface SignupFormInputs {
   name: string;
@@ -20,7 +21,25 @@ const SignupPage: React.FC = () => {
 
   const onSubmit = async (data: SignupFormInputs) => {
     console.log(data);
-    addSignUpData(data).then((res) => console.log(res));
+    addSignUpData(data).then((res) => {
+      if (res.error) {
+        Swal.fire({
+          icon: "error",
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          title: `${res.error.data.message}`,
+        });
+      } else if (res.data) {
+        Swal.fire({
+          icon: "success",
+          title: `Signup Successful`,
+          text: "You will be redirected to login page in 3 seconds",
+        });
+        setTimeout(() => {
+          window.location.href = "/login";
+        }, 3000);
+      }
+    });
   };
 
   return (
