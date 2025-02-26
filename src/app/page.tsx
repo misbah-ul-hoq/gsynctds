@@ -1,4 +1,5 @@
 "use client";
+import { useGetUserInfoQuery } from "@/redux/features/auth/authApiSlice";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -7,6 +8,10 @@ export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState<
     string | null | undefined
   >(undefined);
+  const { data } = useGetUserInfoQuery(isAuthenticated, {
+    skip: !isAuthenticated,
+  });
+  console.log(data);
   useEffect(() => {
     const token = localStorage.getItem("authToken");
     setIsAuthenticated(token);

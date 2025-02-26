@@ -30,12 +30,17 @@ const authApiSlice = baseAPI.injectEndpoints({
         body: data,
       }),
     }),
-
     requestNewEmailVerificationCode: builder.mutation({
       query: (data) => ({
         url: "/auth/request-new-email-otp",
         method: "POST",
         body: data,
+      }),
+    }),
+    getUserInfo: builder.query({
+      query: () => ({
+        url: "/auth/me",
+        method: "GET",
       }),
     }),
   }),
@@ -47,4 +52,5 @@ export const {
   useAddEmailVerificationCodeMutation,
   useAddAuthVerificationCodeMutation,
   useRequestNewEmailVerificationCodeMutation,
+  useGetUserInfoQuery,
 } = authApiSlice;
