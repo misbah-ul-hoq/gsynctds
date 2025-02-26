@@ -43,6 +43,12 @@ const authApiSlice = baseAPI.injectEndpoints({
         method: "GET",
       }),
     }),
+    googleSignIn: builder.query<void, void>({
+      query: () => ({
+        url: "/auth/google",
+        method: "GET",
+      }),
+    }),
   }),
 });
 
@@ -53,4 +59,5 @@ export const {
   useAddAuthVerificationCodeMutation,
   useRequestNewEmailVerificationCodeMutation,
   useGetUserInfoQuery,
+  useGoogleSignInQuery,
 } = authApiSlice;
