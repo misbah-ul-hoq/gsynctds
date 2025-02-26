@@ -9,7 +9,42 @@ const authApiSlice = baseAPI.injectEndpoints({
         body: data,
       }),
     }),
+    addLoginData: builder.mutation({
+      query: (data) => ({
+        url: "/auth/login",
+        method: "POST",
+        body: data,
+      }),
+    }),
+    addEmailVerificationCode: builder.mutation({
+      query: (data) => ({
+        url: "/auth/verify-email-otp",
+        method: "POST",
+        body: data,
+      }),
+    }),
+    addAuthVerificationCode: builder.mutation({
+      query: (data) => ({
+        url: "/auth/verify-authenticator-otp",
+        method: "POST",
+        body: data,
+      }),
+    }),
+
+    requestNewEmailVerificationCode: builder.mutation({
+      query: (data) => ({
+        url: "/auth/request-new-email-otp",
+        method: "POST",
+        body: data,
+      }),
+    }),
   }),
 });
 
-export const { useAddSignUpDataMutation } = authApiSlice;
+export const {
+  useAddSignUpDataMutation,
+  useAddLoginDataMutation,
+  useAddEmailVerificationCodeMutation,
+  useAddAuthVerificationCodeMutation,
+  useRequestNewEmailVerificationCodeMutation,
+} = authApiSlice;
