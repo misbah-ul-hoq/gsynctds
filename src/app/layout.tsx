@@ -14,7 +14,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "GsyncTDS",
+  title: {
+    template: "%s | GsyncTDS",
+    default: "GsyncTDS",
+  },
   description: "Your note management system",
 };
 
