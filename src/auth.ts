@@ -7,6 +7,7 @@ declare module "next-auth" {
     idToken?: string;
     refreshToken?: string;
     expiresAt?: number;
+    calendarId?: string;
   }
 }
 
@@ -21,7 +22,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           access_type: "offline",
           response_type: "code",
           scope:
-            "https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/calendar ",
+            "openid email https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/calendar ",
         },
       },
     }),
@@ -34,6 +35,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.refreshToken = account.refresh_token;
         token.expiresAt = account.expires_at;
       }
+      // Fetch the user's Calendar ID
+      if (token.accessToken) {
+        try {
+          const calendarId = await fetchUserPrimaryCalendar(
+            account?.access_token as string,
+          );
+          token.calendarId = calendarId;
+        } catch (error) {
+          console.error("Error fetching calendar ID:", error);
+        }
+      }
       return token;
     },
 
@@ -43,8 +55,27 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.idToken = token.idToken as string;
         session.refreshToken = token.refreshToken as string;
         session.expiresAt = token.expiresAt as number;
+        session.calendarId = token.calendarId as string; // Store the calendar ID in session
       }
       return session;
     },
   },
 });
+
+// 🔹 Function to Fetch Primary Calendar ID
+async function fetchUserPrimaryCalendar(accessToken: string) {
+  const response = await fetch(
+    "https://www.googleapis.com/calendar/v3/users/me/calendarList",
+    {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    },
+  );
+  const data = await response.json();
+  console.log(data.error.errors);
+  if (!response.ok) throw new Error("Failed to fetch calendar ID");
+
+  // Extract the primary calendar ID (Google returns "primary" as default)
+  const primaryCalendar = data.items.find((cal: any) => cal.primary);
+  console.log(primaryCalendar);
+  return primaryCalendar?.id || "primary";
+}
