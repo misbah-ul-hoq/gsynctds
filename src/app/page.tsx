@@ -15,8 +15,7 @@ export default function Home() {
   const { isLoading } = useGetUserInfoQuery(isAuthenticated, {
     skip: !isAuthenticated,
   });
-
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const { name, image } = session?.user || {};
   console.log(session);
 
@@ -31,7 +30,7 @@ export default function Home() {
   if (isAuthenticated === null) {
     redirect("/login");
   }
-  if (isLoading) return <Loader />;
+  if (isLoading || status === "loading") return <Loader />;
   return (
     <div className="flex min-h-screen items-center justify-center font-mono">
       <div className="flex flex-col space-y-2">
