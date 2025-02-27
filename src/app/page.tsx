@@ -1,9 +1,10 @@
 "use client";
 import Image from "next/image";
-import { signIn } from "next-auth/react";
+import { signIn, signOut } from "next-auth/react";
 import { redirect } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
+import { FiLogOut } from "react-icons/fi"; // Importing a logout icon
 
 import Loader from "@/components/shared/Loader";
 import { useGetUserInfoQuery } from "@/redux/features/auth/authApiSlice";
@@ -11,12 +12,12 @@ export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState<
     string | null | undefined
   >(undefined);
-  const { data, isLoading } = useGetUserInfoQuery(isAuthenticated, {
+  const { isLoading } = useGetUserInfoQuery(isAuthenticated, {
     skip: !isAuthenticated,
   });
 
   const { data: session } = useSession();
-  const { name, image } = session?.user;
+  const { name, image } = session?.user || {};
   console.log(session);
 
   useEffect(() => {
@@ -51,11 +52,30 @@ export default function Home() {
           </button>
         )}
         {session?.user && (
-          <div>
-            <Image src={`${image}`} alt={`${name}`} height={70} width={70} />
-            <h3 className="text-xl font-bold">Welcome, {name}</h3>
+          <div className="flex flex-col items-center justify-center gap-2">
+            <Image
+              src={`${image}`}
+              alt={`${name}`}
+              height={70}
+              width={70}
+              className="rounded-full"
+            />
+            <div className="my-3 space-y-1 text-center">
+              <h3 className="text-xl font-bold">Welcome, {name}</h3>
+              <p>
+                Navigate to the sidebar links to edit, view and delete notes
+              </p>
+            </div>
 
-            <button>Disconnect from Google</button>
+            <button className="flex w-full items-center justify-center gap-3 rounded-lg border border-gray-300 px-5 py-2 shadow-sm transition-all hover:bg-gray-100 hover:shadow-md sm:w-auto">
+              <FiLogOut className="h-5 w-5 text-gray-700" />
+              <span
+                className="font-medium text-gray-700"
+                onClick={() => signOut()}
+              >
+                Sign Out
+              </span>
+            </button>
           </div>
         )}
       </div>
