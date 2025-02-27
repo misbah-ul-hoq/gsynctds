@@ -73,7 +73,7 @@ export default function Home() {
                 className="font-medium text-gray-700"
                 onClick={() => signOut()}
               >
-                Sign Out
+                Sign Out from Google
               </span>
             </button>
           </div>
