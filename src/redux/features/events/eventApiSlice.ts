@@ -8,14 +8,42 @@ const eventApiSlice = baseAPI.injectEndpoints({
         method: "POST",
         body: data,
       }),
+      invalidatesTags: ["Events"],
     }),
-    getCalenderEvents: builder.query({
+    deleteEvent: builder.mutation({
+      query: (id) => ({
+        url: `/events/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Events"],
+    }),
+    updateEvent: builder.mutation({
+      query: (data) => ({
+        url: `/events/${data.id}`,
+        method: "PUT",
+        body: data,
+      }),
+      invalidatesTags: ["Events"],
+    }),
+    getEvents: builder.query<void, void>({
       query: () => ({
         url: "/events",
+        method: "GET",
+      }),
+    }),
+    getEventById: builder.query({
+      query: (id) => ({
+        url: `/events/${id}`,
         method: "GET",
       }),
     }),
   }),
 });
 
-export const { useAddEventMutation } = eventApiSlice;
+export const {
+  useAddEventMutation,
+  useDeleteEventMutation,
+  useUpdateEventMutation,
+  useGetEventsQuery,
+  useGetEventByIdQuery,
+} = eventApiSlice;

@@ -5,7 +5,7 @@ export const baseURL =
 
 export const baseAPI = createApi({
   reducerPath: "baseAPI",
-  tagTypes: [],
+  tagTypes: ["Events"],
   baseQuery: fetchBaseQuery({
     baseUrl: baseURL,
     credentials: "include",

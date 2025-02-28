@@ -1,6 +1,9 @@
 "use client";
-import { useAddEventMutation } from "@/redux/features/events/eventApiSlice";
-import { stat } from "fs";
+import {
+  useAddEventMutation,
+  useGetEventsQuery,
+} from "@/redux/features/events/eventApiSlice";
+import moment from "moment";
 import { useSession } from "next-auth/react";
 import React, { useEffect, useState } from "react";
 import DatePicker from "react-datepicker";
@@ -10,6 +13,7 @@ import { RiArrowDropDownLine } from "react-icons/ri";
 import Swal from "sweetalert2";
 
 type EventType = {
+  _id?: string;
   summary: string;
   description: string;
   start: {
@@ -47,6 +51,9 @@ const NotesPage = () => {
 
   // redux hooks
   const [addEvent, { isLoading }] = useAddEventMutation();
+  const { data: events } = useGetEventsQuery();
+
+  console.log(events);
 
   const postNewEvent = async () => {
     // if the user connected his google account, then post the event to google calendar api
@@ -216,10 +223,60 @@ const NotesPage = () => {
       </form>
 
       <div className="mt-5">
-        <h2 className="text-2xl font-bold">Events</h2>
+        <h2 className="mb-4 text-2xl font-bold">Events</h2>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {Array.isArray(events) &&
+            events?.map((event: EventType) => (
+              <EventCard key={event._id} event={event} />
+            ))}
+        </div>
       </div>
     </div>
   );
 };
 
 export default NotesPage;
+
+interface EvetCardProps {
+  summary: string;
+  description: string;
+  start: { dateTime: string };
+  end: { dateTime: string };
+  status: string;
+  priority: string;
+}
+
+const EventCard = ({ event }: { event: EvetCardProps }) => {
+  const { summary, description, start, end, status, priority } = event;
+  return (
+    <div className="mx-auto max-w-md rounded-2xl border border-gray-200 bg-white p-5 shadow-lg dark:border-gray-700 dark:bg-gray-800">
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+          {summary}
+        </h3>
+        <span className="badge badge-primary">{status}</span>
+      </div>
+      <p className="mb-4 text-sm">{description}</p>
+      <div className="mb-3 text-sm">
+        <p>
+          <strong>Start:</strong>{" "}
+          {moment(start.dateTime).local().format("Do MMMM, YYYY, hA")}
+        </p>
+        <p>
+          <strong>End:</strong>{" "}
+          {moment(end.dateTime).local().format("Do MMMM, YYYY, hA")}
+        </p>
+      </div>
+      <div className="flex items-center justify-between">
+        <p className={`font-semibold`}>
+          Priority: <span className="badge badge-primary">{priority}</span>
+        </p>
+      </div>
+
+      <div className="mt-5 flex justify-between space-x-2">
+        <button className="btn btn-outline btn-warning btn-sm">Delete</button>
+        <button className="btn btn-primary btn-sm">Update</button>
+      </div>
+    </div>
+  );
+};
