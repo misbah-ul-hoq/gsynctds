@@ -33,7 +33,7 @@ const NotesPage = () => {
   const { data: session } = useSession();
   // const [events, setEvents] = useState(null);
   const [showEventForm, setShowEventForm] = useState(false);
-  const [priority, setPriority] = useState<"high" | "medium" | "low">("medium");
+
   const [start, setStart] = useState(new Date());
   const [end, setEnd] = useState(new Date());
   const [event, setEvent] = useState<EventType>({
@@ -48,8 +48,9 @@ const NotesPage = () => {
       timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     },
     status: "confirmed",
-    priority,
+    priority: "medium",
   });
+  console.log(event);
 
   // redux hooks
   const [addEvent, { isLoading }] = useAddEventMutation();
@@ -99,7 +100,6 @@ const NotesPage = () => {
       .catch((error) => {});
   };
 
-  useEffect(() => {}, []);
   return (
     <div className="my-4">
       <div className="mb-5">
@@ -205,8 +205,12 @@ const NotesPage = () => {
               </label>
               <select
                 id="options"
-                value={priority}
-                onChange={(e) => setPriority(e.target.value)}
+                onChange={(e) => {
+                  setEvent({
+                    ...event,
+                    priority: e.target.value as "high" | "medium" | "low",
+                  });
+                }}
                 className="select select-bordered select-sm w-full max-w-xs"
               >
                 <option value="">--Select an option--</option>
