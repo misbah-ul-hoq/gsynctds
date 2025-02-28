@@ -9,6 +9,10 @@ const NotesPage = () => {
   const [events, setEvents] = useState(null);
   const [start, setStart] = useState(new Date());
   const [end, setEnd] = useState(new Date());
+  const [event, setEvent] = useState({
+    summary: "",
+    location: "",
+  });
 
   console.log(events);
   useEffect(() => {
@@ -30,11 +34,20 @@ const NotesPage = () => {
       </div>
 
       <div className="">
-        <div>
-          <p className="">Start</p>
+        <div className="mb-6">
+          <p className="font-semibold">Start</p>
           <DatePicker
             selected={start}
             onChange={(date) => setStart(date)}
+            showTimeSelect
+          />
+        </div>
+
+        <div className="">
+          <p className="font-semibold">End</p>
+          <DatePicker
+            selected={end}
+            onChange={(date) => setEnd(date)}
             showTimeSelect
           />
         </div>
