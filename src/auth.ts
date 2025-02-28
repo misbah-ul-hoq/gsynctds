@@ -35,18 +35,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.refreshToken = account.refresh_token;
         token.expiresAt = account.expires_at;
       }
-      // Fetch the user's Calendar ID
-      if (token.accessToken) {
-        try {
-          // const calendarId = await fetchUserPrimaryCalendar(
-          //   account?.access_token as string,
-          // );
-          // token.calendarId = calendarId;
-        } catch (error) {
-          console.error("Error fetching calendar ID:", error);
-        }
+      // If the token is still valid, return it
+      if (Date.now() < token.expiresAt) {
+        return token;
       }
-      return token;
+      return await refreshAccessToken(token);
     },
 
     async session({ session, token }) {
@@ -61,3 +54,33 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
   },
 });
+
+async function refreshAccessToken(token) {
+  try {
+    const url = "https://oauth2.googleapis.com/token";
+    const params = new URLSearchParams({
+      client_id: process.env.GOOGLE_CLIENT_ID!,
+      client_secret: process.env.GOOGLE_CLIENT_SECRET!,
+      refresh_token: token.refreshToken!,
+      grant_type: "refresh_token",
+    });
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: params.toString(),
+    });
+
+    const refreshedTokens = await response.json();
+    if (!response.ok) throw refreshedTokens;
+
+    return {
+      ...token,
+      accessToken: refreshedTokens.access_token,
+      expiresAt: Date.now() + refreshedTokens.expires_in * 1000,
+    };
+  } catch (error) {
+    console.error("Error refreshing access token:", error);
+    return { ...token, error: "RefreshAccessTokenError" };
+  }
+}

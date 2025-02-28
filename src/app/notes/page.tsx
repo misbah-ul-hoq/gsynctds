@@ -1,6 +1,7 @@
 "use client";
 import {
   useAddEventMutation,
+  useDeleteEventMutation,
   useGetEventsQuery,
 } from "@/redux/features/events/eventApiSlice";
 import moment from "moment";
@@ -53,8 +54,6 @@ const NotesPage = () => {
   const [addEvent, { isLoading }] = useAddEventMutation();
   const { data: events } = useGetEventsQuery();
 
-  console.log(events);
-
   const postNewEvent = async () => {
     // if the user connected his google account, then post the event to google calendar api
     if (session?.user) {
@@ -99,7 +98,6 @@ const NotesPage = () => {
       .catch((error) => {});
   };
 
-  console.log(event);
   useEffect(() => {}, []);
   return (
     <div className="my-4">
@@ -238,6 +236,7 @@ const NotesPage = () => {
 export default NotesPage;
 
 interface EvetCardProps {
+  _id?: string;
   summary: string;
   description: string;
   start: { dateTime: string };
@@ -247,7 +246,20 @@ interface EvetCardProps {
 }
 
 const EventCard = ({ event }: { event: EvetCardProps }) => {
-  const { summary, description, start, end, status, priority } = event;
+  const { _id, summary, description, start, end, status, priority } = event;
+  const [deleteEvent] = useDeleteEventMutation();
+  const handleDeleteEvent = () => {
+    if (window.confirm("Are you sure you want to delete this event?")) {
+      deleteEvent(_id as string)
+        .unwrap()
+        .then(() => {
+          Swal.fire({
+            icon: "success",
+            title: "Event deleted successfully",
+          });
+        });
+    }
+  };
   return (
     <div className="mx-auto max-w-md rounded-2xl border border-gray-200 bg-white p-5 shadow-lg dark:border-gray-700 dark:bg-gray-800">
       <div className="mb-3 flex items-center justify-between">
@@ -274,7 +286,12 @@ const EventCard = ({ event }: { event: EvetCardProps }) => {
       </div>
 
       <div className="mt-5 flex justify-between space-x-2">
-        <button className="btn btn-outline btn-warning btn-sm">Delete</button>
+        <button
+          onClick={handleDeleteEvent}
+          className="btn btn-outline btn-warning btn-sm"
+        >
+          Delete
+        </button>
         <button className="btn btn-primary btn-sm">Update</button>
       </div>
     </div>
