@@ -31,9 +31,20 @@ type EventType = {
 };
 const NotesPage = () => {
   const { data: session } = useSession();
-  // const [events, setEvents] = useState(null);
+  const [calendarEvents, setCalendarEvents] = useState<
+    | {
+        id: string;
+        summary: string;
+        description: string;
+        start: { dateTime: string };
+        end: { dateTime: string };
+        status: string;
+        priority: string;
+      }[]
+    | null
+  >(null);
   const [showEventForm, setShowEventForm] = useState(false);
-
+  const [calendarEvent, setCalendarEvent] = useState(null);
   const [start, setStart] = useState(new Date());
   const [end, setEnd] = useState(new Date());
   const [event, setEvent] = useState<EventType>({
@@ -50,7 +61,7 @@ const NotesPage = () => {
     status: "confirmed",
     priority: "medium",
   });
-  console.log(event);
+  console.log(calendarEvent);
 
   // redux hooks
   const [addEvent, { isLoading }] = useAddEventMutation();
@@ -71,12 +82,22 @@ const NotesPage = () => {
           return res.json();
         })
         .then((res) => {
-          console.log(res);
+          setCalendarEvent(res);
           if (res.id) {
             Swal.fire({
               icon: "success",
               title: "Event created in google calendar",
             });
+            addEvent({ ...event, id: res.id })
+              .unwrap()
+              .then((res) => {
+                console.log(res);
+                Swal.fire({
+                  icon: "success",
+                  title: "Event created successfully",
+                });
+              })
+              .catch(() => {});
           }
         })
         .catch(() => {
@@ -88,25 +109,14 @@ const NotesPage = () => {
     }
 
     // post the event to the backend
-    addEvent(event)
-      .unwrap()
-      .then((res) => {
-        console.log(res);
-        Swal.fire({
-          icon: "success",
-          title: "Event created successfully",
-        });
-      })
-      .catch(() => {});
+    if (calendarEvent?.id) {
+    }
   };
 
   useEffect(() => {
     async function getCalendarEvents(accessToken: string) {
       const calendarId = "primary";
-      const timeMin = new Date().toISOString();
-
-      const url = `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events?timeMin=${encodeURIComponent(timeMin)}&singleEvents=true&orderBy=startTime`;
-
+      const url = `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events`;
       try {
         const response = await fetch(url, {
           method: "GET",
@@ -122,6 +132,7 @@ const NotesPage = () => {
 
         const data = await response.json();
         console.log("Events:", data.items);
+        setCalendarEvents(data.items);
         return data.items;
       } catch (error) {
         console.error("Error fetching calendar events:", error);
@@ -262,7 +273,16 @@ const NotesPage = () => {
       </form>
 
       <div className="mt-5">
-        <h2 className="mb-4 text-2xl font-bold">Events</h2>
+        {Array.isArray(events) && events.length === 0 && (
+          <h2 className="mb-4 text-2xl font-bold">No events. Start creating</h2>
+        )}
+
+        {Array.isArray(events) && events.length > 0 && (
+          <h2 className="mb-4 text-2xl font-bold">
+            Events through GsyncTDS app.
+          </h2>
+        )}
+
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {Array.isArray(events) &&
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -272,6 +292,39 @@ const NotesPage = () => {
             ))}
         </div>
       </div>
+
+      <div>
+        {Array.isArray(calendarEvents) && calendarEvents?.length === 0 && (
+          <h2 className="mb-4 text-2xl font-bold">No events. Start creating</h2>
+        )}
+
+        {Array.isArray(calendarEvents) && calendarEvents?.length > 0 && (
+          <h2 className="mb-4 text-2xl font-bold">
+            Events through Google Calendar
+          </h2>
+        )}
+
+        <div className="grid gap-3 lg:grid-cols-3">
+          {Array.isArray(calendarEvents) && // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+
+            calendarEvents?.map((event) => (
+              <EventCard
+                key={event.id}
+                event={{
+                  accessToken: session?.accessToken,
+                  id: event.id,
+                  _id: event.id,
+                  summary: event.summary,
+                  description: event.description,
+                  start: event.start,
+                  end: event.end,
+                  status: event.status,
+                }}
+              />
+            ))}{" "}
+        </div>
+      </div>
     </div>
   );
 };
@@ -279,17 +332,29 @@ const NotesPage = () => {
 export default NotesPage;
 
 interface EvetCardProps {
+  accessToken?: string;
+  id?: string;
   _id?: string;
   summary: string;
   description: string;
   start: { dateTime: string };
   end: { dateTime: string };
   status: string;
-  priority: string;
+  priority?: string;
 }
 
 const EventCard = ({ event }: { event: EvetCardProps }) => {
-  const { _id, summary, description, start, end, status, priority } = event;
+  const {
+    id,
+    _id,
+    accessToken,
+    summary,
+    description,
+    start,
+    end,
+    status,
+    priority,
+  } = event;
   const [deleteEvent] = useDeleteEventMutation();
   const handleDeleteEvent = () => {
     if (window.confirm("Are you sure you want to delete this event?")) {
@@ -303,6 +368,22 @@ const EventCard = ({ event }: { event: EvetCardProps }) => {
         });
     }
   };
+
+  const deleteEventFromGoogle = (id: string) => {
+    if (window.confirm("Are you sure you want to delete this event?")) {
+      fetch(
+        "https://www.googleapis.com/calendar/v3/calendars/primary/events/" + id,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: "Bearer " + accessToken,
+            "Content-Type": "application/json",
+          },
+        },
+      );
+    }
+  };
+
   return (
     <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 shadow-lg dark:border-gray-700 dark:bg-gray-800">
       <div className="mb-3 flex items-center gap-1">
@@ -324,14 +405,19 @@ const EventCard = ({ event }: { event: EvetCardProps }) => {
       </div>
 
       <div className="flex items-center justify-between">
-        <p className={`font-semibold`}>
-          Priority: <span className="badge badge-primary">{priority}</span>
-        </p>
+        {priority && (
+          <p className={`font-semibold`}>
+            Priority: <span className="badge badge-primary">{priority}</span>
+          </p>
+        )}
       </div>
 
       <div className="mt-5 flex justify-between space-x-2">
         <button
-          onClick={handleDeleteEvent}
+          onClick={() => {
+            handleDeleteEvent();
+            deleteEventFromGoogle(id as string);
+          }}
           className="btn btn-outline btn-warning btn-sm"
         >
           Delete
