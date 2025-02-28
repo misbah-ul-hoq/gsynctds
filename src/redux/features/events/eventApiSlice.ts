@@ -30,6 +30,7 @@ const eventApiSlice = baseAPI.injectEndpoints({
         url: "/events",
         method: "GET",
       }),
+      providesTags: ["Events"],
     }),
     getEventById: builder.query({
       query: (id) => ({

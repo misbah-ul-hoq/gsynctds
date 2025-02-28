@@ -12,6 +12,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import { FaArrowDown, FaArrowUp } from "react-icons/fa";
 import { RiArrowDropDownLine } from "react-icons/ri";
 import Swal from "sweetalert2";
+import truncate from "truncate";
 
 type EventType = {
   _id?: string;
@@ -261,24 +262,25 @@ const EventCard = ({ event }: { event: EvetCardProps }) => {
     }
   };
   return (
-    <div className="mx-auto max-w-md rounded-2xl border border-gray-200 bg-white p-5 shadow-lg dark:border-gray-700 dark:bg-gray-800">
-      <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-          {summary}
+    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 shadow-lg dark:border-gray-700 dark:bg-gray-800">
+      <div className="mb-3 flex items-center gap-1">
+        <h3 className="grow font-semibold text-gray-900 dark:text-white">
+          {truncate(summary, 15)}
         </h3>
         <span className="badge badge-primary">{status}</span>
       </div>
-      <p className="mb-4 text-sm">{description}</p>
+      <p className="mb-4 text-sm">{truncate(description, 20)}</p>
       <div className="mb-3 text-sm">
         <p>
           <strong>Start:</strong>{" "}
-          {moment(start.dateTime).local().format("Do MMMM, YYYY, hA")}
+          {moment(start.dateTime).format("Do MMMM, YYYY, hA")}
         </p>
         <p>
           <strong>End:</strong>{" "}
-          {moment(end.dateTime).local().format("Do MMMM, YYYY, hA")}
+          {moment(end.dateTime).format("Do MMMM, YYYY, hA")}
         </p>
       </div>
+
       <div className="flex items-center justify-between">
         <p className={`font-semibold`}>
           Priority: <span className="badge badge-primary">{priority}</span>
