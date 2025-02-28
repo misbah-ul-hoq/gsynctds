@@ -4,6 +4,7 @@ import {
   useDeleteEventMutation,
   useGetEventsQuery,
 } from "@/redux/features/events/eventApiSlice";
+import { get } from "http";
 import moment from "moment";
 import { useSession } from "next-auth/react";
 import React, { useEffect, useState } from "react";
@@ -99,6 +100,26 @@ const NotesPage = () => {
       })
       .catch((error) => {});
   };
+
+  useEffect(() => {
+    const getEventsFromGoogle = async () => {
+      const res = await fetch(
+        `https://www.googleapis.com/calendar/v3/users/me/calendarList/primary`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: "Bearer " + session?.accessToken,
+            "Content-Type": "application/json",
+          },
+        },
+      );
+      const data = await res.json();
+      console.log(data);
+    };
+    if (session?.accessToken) {
+      getEventsFromGoogle();
+    }
+  }, [session?.accessToken]);
 
   return (
     <div className="my-4">
