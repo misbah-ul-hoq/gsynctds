@@ -4,7 +4,6 @@ import {
   useDeleteEventMutation,
   useGetEventsQuery,
 } from "@/redux/features/events/eventApiSlice";
-import { get } from "http";
 import moment from "moment";
 import { useSession } from "next-auth/react";
 import React, { useEffect, useState } from "react";
@@ -98,26 +97,40 @@ const NotesPage = () => {
           title: "Event created successfully",
         });
       })
-      .catch((error) => {});
+      .catch(() => {});
   };
 
   useEffect(() => {
-    const getEventsFromGoogle = async () => {
-      const res = await fetch(
-        `https://www.googleapis.com/calendar/v3/users/me/calendarList/primary`,
-        {
+    async function getCalendarEvents(accessToken: string) {
+      const calendarId = "primary";
+      const timeMin = new Date().toISOString();
+
+      const url = `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events?timeMin=${encodeURIComponent(timeMin)}&singleEvents=true&orderBy=startTime`;
+
+      try {
+        const response = await fetch(url, {
           method: "GET",
           headers: {
-            Authorization: "Bearer " + session?.accessToken,
-            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+            Accept: "application/json",
           },
-        },
-      );
-      const data = await res.json();
-      console.log(data);
-    };
+        });
+
+        if (!response.ok) {
+          throw new Error(`Error: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log("Events:", data.items);
+        return data.items;
+      } catch (error) {
+        console.error("Error fetching calendar events:", error);
+        return [];
+      }
+    }
+
     if (session?.accessToken) {
-      getEventsFromGoogle();
+      getCalendarEvents(session?.accessToken);
     }
   }, [session?.accessToken]);
 
@@ -243,13 +256,17 @@ const NotesPage = () => {
           </div>
         </div>
 
-        <button className="btn btn-primary">Create Event</button>
+        <button className="btn btn-primary" disabled={isLoading}>
+          Create Event
+        </button>
       </form>
 
       <div className="mt-5">
         <h2 className="mb-4 text-2xl font-bold">Events</h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {Array.isArray(events) &&
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
             events?.map((event: EventType) => (
               <EventCard key={event._id} event={event} />
             ))}
