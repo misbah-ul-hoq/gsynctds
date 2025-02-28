@@ -65,6 +65,7 @@ const NotesPage = () => {
 
   // redux hooks
   const [addEvent, { isLoading }] = useAddEventMutation();
+  const [deleteEvent] = useDeleteEventMutation();
   const { data: events } = useGetEventsQuery();
 
   const postNewEvent = async () => {
@@ -96,6 +97,7 @@ const NotesPage = () => {
                   icon: "success",
                   title: "Event created successfully",
                 });
+                window.location.reload();
               })
               .catch(() => {});
           }
@@ -107,9 +109,39 @@ const NotesPage = () => {
           });
         });
     }
+  };
 
-    // post the event to the backend
-    if (calendarEvent?.id) {
+  const handleDeleteEvent = (id: string) => {
+    console.log(session?.accessToken);
+    if (
+      window.confirm("Are you sure you want to delete this event?") &&
+      session?.accessToken
+    ) {
+      deleteEvent(id)
+        .unwrap()
+        .then(() => {
+          Swal.fire({
+            icon: "success",
+            title: "Event deleted successfully",
+          });
+        });
+
+      fetch(
+        "https://www.googleapis.com/calendar/v3/calendars/primary/events/" + id,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: "Bearer " + session?.accessToken,
+            "Content-Type": "application/json",
+          },
+        },
+      )
+        .then((res) => {
+          res.json();
+        })
+        .then(() => {
+          // window.location.reload();
+        });
     }
   };
 
@@ -274,11 +306,11 @@ const NotesPage = () => {
 
       <div className="mt-5">
         {Array.isArray(events) && events.length === 0 && (
-          <h2 className="mb-4 text-2xl font-bold">No events. Start creating</h2>
+          <h2 className="mb-3 text-2xl font-bold">No events. Start creating</h2>
         )}
 
         {Array.isArray(events) && events.length > 0 && (
-          <h2 className="mb-4 text-2xl font-bold">
+          <h2 className="mb-3 text-2xl font-bold">
             Events through GsyncTDS app.
           </h2>
         )}
@@ -293,21 +325,19 @@ const NotesPage = () => {
         </div>
       </div>
 
-      <div>
+      <div className="mt-7">
         {Array.isArray(calendarEvents) && calendarEvents?.length === 0 && (
-          <h2 className="mb-4 text-2xl font-bold">No events. Start creating</h2>
+          <h2 className="mb-3 text-2xl font-bold">No events. Start creating</h2>
         )}
 
         {Array.isArray(calendarEvents) && calendarEvents?.length > 0 && (
-          <h2 className="mb-4 text-2xl font-bold">
+          <h2 className="mb-3 text-2xl font-bold">
             Events through Google Calendar
           </h2>
         )}
 
         <div className="grid gap-3 lg:grid-cols-3">
-          {Array.isArray(calendarEvents) && // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-
+          {Array.isArray(calendarEvents) &&
             calendarEvents?.map((event) => (
               <EventCard
                 key={event.id}
@@ -320,9 +350,10 @@ const NotesPage = () => {
                   start: event.start,
                   end: event.end,
                   status: event.status,
+                  handleDeleteEvent,
                 }}
               />
-            ))}{" "}
+            ))}
         </div>
       </div>
     </div>
@@ -341,6 +372,7 @@ interface EvetCardProps {
   end: { dateTime: string };
   status: string;
   priority?: string;
+  handleDeleteEvent: (id: string) => void;
 }
 
 const EventCard = ({ event }: { event: EvetCardProps }) => {
@@ -354,35 +386,10 @@ const EventCard = ({ event }: { event: EvetCardProps }) => {
     end,
     status,
     priority,
+    handleDeleteEvent,
   } = event;
-  const [deleteEvent] = useDeleteEventMutation();
-  const handleDeleteEvent = () => {
-    if (window.confirm("Are you sure you want to delete this event?")) {
-      deleteEvent(_id as string)
-        .unwrap()
-        .then(() => {
-          Swal.fire({
-            icon: "success",
-            title: "Event deleted successfully",
-          });
-        });
-    }
-  };
 
-  const deleteEventFromGoogle = (id: string) => {
-    if (window.confirm("Are you sure you want to delete this event?")) {
-      fetch(
-        "https://www.googleapis.com/calendar/v3/calendars/primary/events/" + id,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: "Bearer " + accessToken,
-            "Content-Type": "application/json",
-          },
-        },
-      );
-    }
-  };
+  console.log(accessToken);
 
   return (
     <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 shadow-lg dark:border-gray-700 dark:bg-gray-800">
@@ -414,10 +421,7 @@ const EventCard = ({ event }: { event: EvetCardProps }) => {
 
       <div className="mt-5 flex justify-between space-x-2">
         <button
-          onClick={() => {
-            handleDeleteEvent();
-            deleteEventFromGoogle(id as string);
-          }}
+          onClick={() => handleDeleteEvent}
           className="btn btn-outline btn-warning btn-sm"
         >
           Delete
