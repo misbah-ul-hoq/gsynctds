@@ -17,7 +17,6 @@ export default function Home() {
   });
   const { data: session, status } = useSession();
   const { name, image } = session?.user || {};
-  console.log(session);
 
   useEffect(() => {
     const token = localStorage.getItem("authToken");

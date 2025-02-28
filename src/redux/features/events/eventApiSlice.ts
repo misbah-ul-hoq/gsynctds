@@ -18,4 +18,4 @@ const eventApiSlice = baseAPI.injectEndpoints({
   }),
 });
 
-export const {} = eventApiSlice;
+export const { useAddEventMutation } = eventApiSlice;

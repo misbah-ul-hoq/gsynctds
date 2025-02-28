@@ -1,11 +1,13 @@
 "use client";
+import { useAddEventMutation } from "@/redux/features/events/eventApiSlice";
+import { stat } from "fs";
 import { useSession } from "next-auth/react";
 import React, { useEffect, useState } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { set } from "react-hook-form";
 import { FaArrowDown, FaArrowUp } from "react-icons/fa";
 import { RiArrowDropDownLine } from "react-icons/ri";
+import Swal from "sweetalert2";
 
 type EventType = {
   summary: string;
@@ -23,11 +25,11 @@ type EventType = {
 };
 const NotesPage = () => {
   const { data: session } = useSession();
-  const [events, setEvents] = useState(null);
+  // const [events, setEvents] = useState(null);
   const [showEventForm, setShowEventForm] = useState(false);
+  const [priority, setPriority] = useState<"high" | "medium" | "low">("medium");
   const [start, setStart] = useState(new Date());
   const [end, setEnd] = useState(new Date());
-
   const [event, setEvent] = useState<EventType>({
     summary: "",
     description: "",
@@ -40,28 +42,54 @@ const NotesPage = () => {
       timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     },
     status: "confirmed",
-    priority: "high",
+    priority,
   });
 
+  // redux hooks
+  const [addEvent, { isLoading }] = useAddEventMutation();
+
   const postNewEvent = async () => {
-    fetch("https://www.googleapis.com/calendar/v3/calendars/primary/events", {
-      method: "POST",
-      headers: {
-        Authorization: "Bearer " + session?.accessToken,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(event),
-    })
-      .then((res) => {
-        return res.json();
+    // if the user connected his google account, then post the event to google calendar api
+    if (session?.user) {
+      fetch("https://www.googleapis.com/calendar/v3/calendars/primary/events", {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer " + session?.accessToken,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(event),
       })
+        .then((res) => {
+          return res.json();
+        })
+        .then((res) => {
+          console.log(res);
+          if (res.id) {
+            Swal.fire({
+              icon: "success",
+              title: "Event created in google calendar",
+            });
+          }
+        })
+        .catch(() => {
+          Swal.fire({
+            icon: "error",
+            title: "Something went wrong",
+          });
+        });
+    }
+
+    // post the event to the backend
+    addEvent(event)
+      .unwrap()
       .then((res) => {
         console.log(res);
-        alert("Event Created");
+        Swal.fire({
+          icon: "success",
+          title: "Event created successfully",
+        });
       })
-      .catch((err) => {
-        alert("Failed to create event.");
-      });
+      .catch((error) => {});
   };
 
   console.log(event);
@@ -81,10 +109,22 @@ const NotesPage = () => {
       </div>
 
       <form
-        onSubmit={postNewEvent}
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (
+            event.start.dateTime === "" ||
+            event.end.dateTime === "" ||
+            event.summary === "" ||
+            event.description === ""
+          ) {
+            alert("Please fill all the fields");
+            return;
+          }
+          postNewEvent();
+        }}
         className={`overflow-hidden transition-[max-height] duration-500 ${showEventForm ? "max-h-[500px]" : "max-h-0"}`}
       >
-        <div className="flex items-center gap-5">
+        <div className="mb-3 flex items-center gap-5">
           <div className="flex flex-col gap-4">
             <div>
               <p className="text-sm">Title:</p>
@@ -98,18 +138,21 @@ const NotesPage = () => {
                 }}
               />
             </div>
-            <input
-              required
-              type="text"
-              className="input input-bordered"
-              placeholder="Enter Description"
-              onChange={(e) => {
-                setEvent({ ...event, description: e.target.value });
-              }}
-            />
+            <div>
+              <p className="text-sm">Description:</p>
+              <input
+                required
+                type="text"
+                className="input input-bordered"
+                placeholder="Enter Description"
+                onChange={(e) => {
+                  setEvent({ ...event, description: e.target.value });
+                }}
+              />
+            </div>
           </div>
 
-          <div>
+          <div className="">
             <div className="mb-6">
               <p className="flex items-center font-semibold">
                 Start <RiArrowDropDownLine size={30} />
@@ -117,6 +160,8 @@ const NotesPage = () => {
               <DatePicker
                 selected={start}
                 onChange={(date) => {
+                  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                  // @ts-ignore
                   setStart(date);
                   setEvent({
                     ...event,
@@ -134,6 +179,8 @@ const NotesPage = () => {
               <DatePicker
                 selected={end}
                 onChange={(date) => {
+                  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                  // @ts-ignore
                   setEnd(date);
                   setEvent({
                     ...event,
@@ -142,6 +189,25 @@ const NotesPage = () => {
                 }}
                 showTimeSelect
               />
+            </div>
+          </div>
+
+          <div className="flex flex-col">
+            <div>
+              <label htmlFor="options" className="font-semibold">
+                Priority:{" "}
+              </label>
+              <select
+                id="options"
+                value={priority}
+                onChange={(e) => setPriority(e.target.value)}
+                className="select select-bordered select-sm w-full max-w-xs"
+              >
+                <option value="">--Select an option--</option>
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+              </select>
             </div>
           </div>
         </div>
