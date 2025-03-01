@@ -1,11 +1,12 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 "use client";
-import { baseURL } from "@/redux/api/api";
 import {
   useAddEventMutation,
   useSyncPostMutation,
   useDeleteEventMutation,
   useGetEventsQuery,
   useSyncDeleteMutation,
+  useGetEventsCountMutation,
 } from "@/redux/features/events/eventApiSlice";
 import moment from "moment";
 import { useSession } from "next-auth/react";
@@ -14,7 +15,6 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { FaArrowDown, FaArrowUp } from "react-icons/fa";
 import { RiArrowDropDownLine } from "react-icons/ri";
-import { useDispatch } from "react-redux";
 import Swal from "sweetalert2";
 import truncate from "truncate";
 
@@ -35,7 +35,7 @@ type EventType = {
 };
 const NotesPage = () => {
   const { data: session } = useSession();
-  const [calendarEvents, setCalendarEvents] = useState<
+  const [calendarEvents] = useState<
     | {
         id: string;
         summary: string;
@@ -69,19 +69,18 @@ const NotesPage = () => {
   const [addEvent, { isLoading }] = useAddEventMutation();
   const [syncDelete] = useSyncDeleteMutation();
   const [syncPost] = useSyncPostMutation();
-  const [deleteEvent] = useDeleteEventMutation();
   const { data: events, isLoading: isLoadingEvents } = useGetEventsQuery();
+  const [eventsCount] = useGetEventsCountMutation();
+  const [syncPostCompleted, setSyncPostCompleted] = useState(false);
 
   useEffect(() => {
-    if (session?.accessToken) {
-      syncDelete({ accessToken: session?.accessToken }).unwrap();
-    }
-
     const syncAllPost = async () => {
       try {
         // Always call the API, even if events are empty
+        // @ts-ignore
         if (events?.length) {
           await Promise.all(
+            // @ts-ignore
             events.map((event) =>
               syncPost({
                 _id: event._id,
@@ -103,8 +102,37 @@ const NotesPage = () => {
       }
     };
 
-    syncAllPost();
-  }, [session?.accessToken, events, syncDelete, syncPost, isLoadingEvents]);
+    if (session?.accessToken) {
+      eventsCount({ accessToken: session?.accessToken })
+        .unwrap()
+        .then((res) => {
+          console.log(res);
+          if (res.shouldSync) {
+            syncAllPost();
+            setSyncPostCompleted(true);
+          }
+        });
+
+      eventsCount({ accessToken: session?.accessToken })
+        .unwrap()
+        .then((res) => {
+          console.log(res);
+          if (res.shouldSync && syncPostCompleted) {
+            syncDelete({ accessToken: session?.accessToken })
+              .unwrap()
+              .then(() => {});
+          }
+        });
+    }
+  }, [
+    session?.accessToken,
+    events,
+    syncDelete,
+    syncPost,
+    isLoadingEvents,
+    eventsCount,
+    syncPostCompleted,
+  ]);
   const postNewEvent = async () => {
     // post event to database
     addEvent({ ...event })
@@ -119,72 +147,6 @@ const NotesPage = () => {
       })
       .catch(() => {});
   };
-
-  const handleDeleteEvent = (id: string) => {
-    console.log(session?.accessToken);
-    if (
-      window.confirm("Are you sure you want to delete this event?") &&
-      session?.accessToken
-    ) {
-      deleteEvent(id)
-        .unwrap()
-        .then(() => {
-          Swal.fire({
-            icon: "success",
-            title: "Event deleted successfully",
-          });
-        });
-
-      fetch(
-        "https://www.googleapis.com/calendar/v3/calendars/primary/events/" + id,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: "Bearer " + session?.accessToken,
-            "Content-Type": "application/json",
-          },
-        },
-      )
-        .then((res) => {
-          res.json();
-        })
-        .then(() => {
-          // window.location.reload();
-        });
-    }
-  };
-
-  // useEffect(() => {
-  //   async function getCalendarEvents(accessToken: string) {
-  //     const calendarId = "primary";
-  //     const url = `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events`;
-  //     try {
-  //       const response = await fetch(url, {
-  //         method: "GET",
-  //         headers: {
-  //           Authorization: `Bearer ${accessToken}`,
-  //           Accept: "application/json",
-  //         },
-  //       });
-
-  //       if (!response.ok) {
-  //         throw new Error(`Error: ${response.status} ${response.statusText}`);
-  //       }
-
-  //       const data = await response.json();
-  //       console.log("Events:", data.items);
-  //       setCalendarEvents(data.items);
-  //       return data.items;
-  //     } catch (error) {
-  //       console.error("Error fetching calendar events:", error);
-  //       return [];
-  //     }
-  //   }
-
-  //   if (session?.accessToken) {
-  //     getCalendarEvents(session?.accessToken);
-  //   }
-  // }, [session?.accessToken]);
 
   return (
     <div className="my-4">
@@ -252,7 +214,6 @@ const NotesPage = () => {
               <DatePicker
                 selected={start}
                 onChange={(date) => {
-                  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                   // @ts-ignore
                   setStart(date);
                   setEvent({
@@ -271,7 +232,6 @@ const NotesPage = () => {
               <DatePicker
                 selected={end}
                 onChange={(date) => {
-                  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                   // @ts-ignore
                   setEnd(date);
                   setEvent({
@@ -326,7 +286,6 @@ const NotesPage = () => {
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {Array.isArray(events) &&
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore
             events?.map((event: EventType) => (
               <EventCard key={event._id} event={event} />
@@ -384,23 +343,12 @@ interface EvetCardProps {
 }
 
 const EventCard = ({ event }: { event: EvetCardProps }) => {
-  const { data: session } = useSession();
-  const { summary, description, start, end, status, priority } = event;
-  const [syncPost] = useSyncPostMutation();
-  console.log(session);
+  const { _id, summary, description, start, end, status, priority } = event;
+  const [deleteEvent] = useDeleteEventMutation();
 
-  console.log(
-    "Both user and access token is present",
-    session?.user && session?.accessToken,
-  );
-  useEffect(() => {
-    // if (session?.user && session?.accessToken) {
-    //   syncPost({
-    //     ...event,
-    //     accessToken: session?.accessToken,
-    //   }).unwrap();
-    // }
-  }, []);
+  const handleDeleteEvent = async (id: string) => {
+    deleteEvent(id).unwrap();
+  };
 
   return (
     <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 shadow-lg dark:border-gray-700 dark:bg-gray-800">
@@ -431,7 +379,12 @@ const EventCard = ({ event }: { event: EvetCardProps }) => {
       </div>
 
       <div className="mt-5 flex justify-between space-x-2">
-        <button className="btn btn-outline btn-warning btn-sm">Delete</button>
+        <button
+          className="btn btn-outline btn-warning btn-sm"
+          onClick={() => handleDeleteEvent(_id as string)}
+        >
+          Delete
+        </button>
         <button className="btn btn-primary btn-sm">Update</button>
       </div>
     </div>

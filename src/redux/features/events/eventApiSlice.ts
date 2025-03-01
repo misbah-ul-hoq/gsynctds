@@ -56,6 +56,13 @@ const eventApiSlice = baseAPI.injectEndpoints({
         method: "GET",
       }),
     }),
+    getEventsCount: builder.mutation({
+      query: (body) => ({
+        url: "/events/count/all",
+        method: "POST",
+        body,
+      }),
+    }),
   }),
 });
 
@@ -67,4 +74,5 @@ export const {
   useUpdateEventMutation,
   useGetEventsQuery,
   useGetEventByIdQuery,
+  useGetEventsCountMutation,
 } = eventApiSlice;
