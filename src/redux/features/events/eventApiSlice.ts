@@ -18,6 +18,14 @@ const eventApiSlice = baseAPI.injectEndpoints({
       }),
       invalidatesTags: ["Events"],
     }),
+    syncDelete: builder.mutation({
+      query: (body) => ({
+        url: "/events/sync-all",
+        method: "DELETE",
+        body,
+      }),
+      invalidatesTags: ["Events"],
+    }),
     deleteEvent: builder.mutation({
       query: (id) => ({
         url: `/events/${id}`,
@@ -52,6 +60,7 @@ const eventApiSlice = baseAPI.injectEndpoints({
 export const {
   useAddEventMutation,
   useAddEventToGoogleCalendarMutation,
+  useSyncDeleteMutation,
   useDeleteEventMutation,
   useUpdateEventMutation,
   useGetEventsQuery,

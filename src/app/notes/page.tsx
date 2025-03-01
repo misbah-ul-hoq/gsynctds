@@ -4,7 +4,9 @@ import {
   useAddEventToGoogleCalendarMutation,
   useDeleteEventMutation,
   useGetEventsQuery,
+  useSyncDeleteMutation,
 } from "@/redux/features/events/eventApiSlice";
+import { access } from "fs";
 import moment from "moment";
 import { useSession } from "next-auth/react";
 import React, { useEffect, useState } from "react";
@@ -64,9 +66,15 @@ const NotesPage = () => {
 
   // redux hooks
   const [addEvent, { isLoading }] = useAddEventMutation();
+  const [syncDelete] = useSyncDeleteMutation();
   const [deleteEvent] = useDeleteEventMutation();
   const { data: events } = useGetEventsQuery();
 
+  useEffect(() => {
+    if (session?.accessToken) {
+      syncDelete({ accessToken: session?.accessToken }).unwrap();
+    }
+  }, [session?.accessToken]);
   const postNewEvent = async () => {
     // post event to database
     addEvent({ ...event })
