@@ -1,6 +1,7 @@
 "use client";
 import {
   useAddEventMutation,
+  useAddEventToGoogleCalendarMutation,
   useDeleteEventMutation,
   useGetEventsQuery,
 } from "@/redux/features/events/eventApiSlice";
@@ -44,7 +45,6 @@ const NotesPage = () => {
     | null
   >(null);
   const [showEventForm, setShowEventForm] = useState(false);
-  const [calendarEvent, setCalendarEvent] = useState(null);
   const [start, setStart] = useState(new Date());
   const [end, setEnd] = useState(new Date());
   const [event, setEvent] = useState<EventType>({
@@ -61,7 +61,6 @@ const NotesPage = () => {
     status: "confirmed",
     priority: "medium",
   });
-  console.log(calendarEvent);
 
   // redux hooks
   const [addEvent, { isLoading }] = useAddEventMutation();
@@ -69,46 +68,18 @@ const NotesPage = () => {
   const { data: events } = useGetEventsQuery();
 
   const postNewEvent = async () => {
-    // if the user connected his google account, then post the event to google calendar api
-    if (session?.user) {
-      fetch("https://www.googleapis.com/calendar/v3/calendars/primary/events", {
-        method: "POST",
-        headers: {
-          Authorization: "Bearer " + session?.accessToken,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(event),
-      })
-        .then((res) => {
-          return res.json();
-        })
-        .then((res) => {
-          setCalendarEvent(res);
-          if (res.id) {
-            Swal.fire({
-              icon: "success",
-              title: "Event created in google calendar",
-            });
-            addEvent({ ...event, id: res.id })
-              .unwrap()
-              .then((res) => {
-                console.log(res);
-                Swal.fire({
-                  icon: "success",
-                  title: "Event created successfully",
-                });
-                window.location.reload();
-              })
-              .catch(() => {});
-          }
-        })
-        .catch(() => {
-          Swal.fire({
-            icon: "error",
-            title: "Something went wrong",
-          });
+    // post event to database
+    addEvent({ ...event })
+      .unwrap()
+      .then((res) => {
+        console.log(res);
+        Swal.fire({
+          icon: "success",
+          title: "Event created successfully",
         });
-    }
+        // window.location.reload();
+      })
+      .catch(() => {});
   };
 
   const handleDeleteEvent = (id: string) => {
@@ -336,7 +307,8 @@ const NotesPage = () => {
           </h2>
         )}
 
-        <div className="grid gap-3 lg:grid-cols-3">
+        {/* showing calendar events */}
+        {/* <div className="grid gap-3 lg:grid-cols-3">
           {Array.isArray(calendarEvents) &&
             calendarEvents?.map((event) => (
               <EventCard
@@ -350,11 +322,10 @@ const NotesPage = () => {
                   start: event.start,
                   end: event.end,
                   status: event.status,
-                  handleDeleteEvent,
                 }}
               />
             ))}
-        </div>
+        </div> */}
       </div>
     </div>
   );
@@ -372,24 +343,29 @@ interface EvetCardProps {
   end: { dateTime: string };
   status: string;
   priority?: string;
-  handleDeleteEvent: (id: string) => void;
 }
 
 const EventCard = ({ event }: { event: EvetCardProps }) => {
-  const {
-    id,
-    _id,
-    accessToken,
-    summary,
-    description,
-    start,
-    end,
-    status,
-    priority,
-    handleDeleteEvent,
-  } = event;
+  const { data: session } = useSession();
+  const { summary, description, start, end, status, priority } = event;
+  const [addEventToGoogleCalendar] = useAddEventToGoogleCalendarMutation();
 
-  console.log(accessToken);
+  useEffect(() => {
+    const postNewEventToGoogleCalendar = async (event: EvetCardProps) => {
+      if (session?.user && session?.accessToken) {
+        addEventToGoogleCalendar({
+          ...event,
+          accessToken: session?.accessToken,
+        }).unwrap();
+      }
+    };
+    if (session?.user && session?.accessToken) {
+      postNewEventToGoogleCalendar({
+        ...event,
+        accessToken: session?.accessToken,
+      });
+    }
+  }, []);
 
   return (
     <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 shadow-lg dark:border-gray-700 dark:bg-gray-800">
@@ -420,12 +396,7 @@ const EventCard = ({ event }: { event: EvetCardProps }) => {
       </div>
 
       <div className="mt-5 flex justify-between space-x-2">
-        <button
-          onClick={() => handleDeleteEvent}
-          className="btn btn-outline btn-warning btn-sm"
-        >
-          Delete
-        </button>
+        <button className="btn btn-outline btn-warning btn-sm">Delete</button>
         <button className="btn btn-primary btn-sm">Update</button>
       </div>
     </div>
