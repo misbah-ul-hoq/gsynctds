@@ -312,7 +312,27 @@ const EventCard = ({ event }: { event: EvetCardProps }) => {
   const [deleteEvent] = useDeleteEventMutation();
 
   const handleDeleteEvent = async (id: string) => {
-    deleteEvent(id).unwrap();
+    Swal.fire({
+      title: "Are you sure?",
+      text: "You won't be able to revert this!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, delete it!",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        deleteEvent(id)
+          .unwrap()
+          .then(() => {
+            Swal.fire({
+              title: "Deleted!",
+              text: "Your event has been deleted.",
+              icon: "success",
+            });
+          });
+      }
+    });
   };
 
   return (
