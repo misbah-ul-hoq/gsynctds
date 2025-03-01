@@ -1,12 +1,12 @@
 "use client";
+import { baseURL } from "@/redux/api/api";
 import {
   useAddEventMutation,
-  useAddEventToGoogleCalendarMutation,
+  useSyncPostMutation,
   useDeleteEventMutation,
   useGetEventsQuery,
   useSyncDeleteMutation,
 } from "@/redux/features/events/eventApiSlice";
-import { access } from "fs";
 import moment from "moment";
 import { useSession } from "next-auth/react";
 import React, { useEffect, useState } from "react";
@@ -67,13 +67,25 @@ const NotesPage = () => {
   // redux hooks
   const [addEvent, { isLoading }] = useAddEventMutation();
   const [syncDelete] = useSyncDeleteMutation();
+  const [syncPost] = useSyncPostMutation();
   const [deleteEvent] = useDeleteEventMutation();
-  const { data: events } = useGetEventsQuery();
+  const { data: events, isLoading: isLoadingEvents } = useGetEventsQuery();
+
+  console.log(events);
 
   useEffect(() => {
     if (session?.accessToken) {
       syncDelete({ accessToken: session?.accessToken }).unwrap();
     }
+    // we need to call the syncpost api at least once when the events are empty on database.
+    fetch(`${baseURL}/events/sync`, {
+      method: "POST",
+      headers: {
+        authToken: localStorage.getItem("authToken") || "",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ accessToken: session?.accessToken }),
+    });
   }, [session?.accessToken]);
   const postNewEvent = async () => {
     // post event to database
@@ -356,22 +368,23 @@ interface EvetCardProps {
 const EventCard = ({ event }: { event: EvetCardProps }) => {
   const { data: session } = useSession();
   const { summary, description, start, end, status, priority } = event;
-  const [addEventToGoogleCalendar] = useAddEventToGoogleCalendarMutation();
+  const [syncPost] = useSyncPostMutation();
+  console.log(session);
 
+  console.log(
+    "Both user and access token is present",
+    session?.user && session?.accessToken,
+  );
   useEffect(() => {
-    const postNewEventToGoogleCalendar = async (event: EvetCardProps) => {
-      if (session?.user && session?.accessToken) {
-        addEventToGoogleCalendar({
-          ...event,
-          accessToken: session?.accessToken,
-        }).unwrap();
-      }
-    };
     if (session?.user && session?.accessToken) {
-      postNewEventToGoogleCalendar({
+      syncPost({
         ...event,
         accessToken: session?.accessToken,
-      });
+      }).unwrap();
+      // postNewEventToGoogleCalendar({
+      //   ...event,
+      //   accessToken: session?.accessToken,
+      // });
     }
   }, []);
 
