@@ -55,9 +55,9 @@ const LoginPage: React.FC = () => {
 
   if (step === 1) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-base-200">
-        <div className="card w-96 bg-base-100 shadow-xl p-6">
-          <h2 className="text-2xl font-bold text-center mb-4">Login</h2>
+      <div className="flex min-h-screen items-center justify-center bg-base-200">
+        <div className="card w-96 bg-base-100 p-6 shadow-xl">
+          <h2 className="mb-4 text-center text-2xl font-bold">Login</h2>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
               <label className="text-sm">Email</label>
@@ -74,7 +74,7 @@ const LoginPage: React.FC = () => {
                 className="input input-bordered w-full"
               />
               {errors.email && (
-                <p className="text-red-500 text-sm">{errors.email.message}</p>
+                <p className="text-sm text-red-500">{errors.email.message}</p>
               )}
             </div>
             <div>
@@ -92,7 +92,7 @@ const LoginPage: React.FC = () => {
                 className="input input-bordered w-full"
               />
               {errors.password && (
-                <p className="text-red-500 text-sm">
+                <p className="text-sm text-red-500">
                   {errors.password.message}
                 </p>
               )}
@@ -105,11 +105,11 @@ const LoginPage: React.FC = () => {
               {isLoading ? "Logging in..." : "Login"}
             </button>
           </form>
-          <p className="text-center mt-3 lg:mt-4 text-sm flex items-center justify-center">
+          <p className="mt-3 flex items-center justify-center text-center text-sm lg:mt-4">
             Don&apos;t have an account?{" "}
             <Link
               href="/signup"
-              className="text-secondary hover:underline py-2 px-1"
+              className="px-1 py-2 text-secondary hover:underline"
             >
               Sign up
             </Link>
@@ -210,12 +210,12 @@ const EmailVeriyPage: React.FC<EmailVeriyPageProps> = ({
       });
   };
   return (
-    <div className="flex items-center justify-center min-h-screen bg-base-200">
-      <div className="card w-96 bg-base-100 shadow-xl p-6">
-        <h2 className="text-2xl font-bold text-center mb-2">
+    <div className="flex min-h-screen items-center justify-center bg-base-200">
+      <div className="card w-96 bg-base-100 p-6 shadow-xl">
+        <h2 className="mb-2 text-center text-2xl font-bold">
           Email Verification
         </h2>
-        <span className="text-sm text-center mb-2">
+        <span className="mb-2 text-center text-sm">
           Enter the code sent to {email}
         </span>
         <form onSubmit={handleSubmit(onSubmit)}>
@@ -235,10 +235,10 @@ const EmailVeriyPage: React.FC<EmailVeriyPageProps> = ({
               },
             })}
           />
-          <span className="text-error text-sm">{errors.code?.message}</span>
+          <span className="text-sm text-error">{errors.code?.message}</span>
 
           <button
-            className="btn btn-block btn-primary mt-2"
+            className="btn btn-primary btn-block mt-2"
             disabled={isLoading}
           >
             {isLoading ? "Submitting..." : "Submit"}
@@ -251,7 +251,7 @@ const EmailVeriyPage: React.FC<EmailVeriyPageProps> = ({
           </button>
         )}
 
-        <span className="text-sm text-center mt-3">
+        <span className="mt-3 text-center text-sm">
           * Do not refresh until done.
         </span>
       </div>
@@ -289,6 +289,7 @@ const GoogleAuthPage: React.FC<GoogleAuthPageProps> = ({
       .then((res) => {
         console.log(res);
         localStorage.setItem("authToken", res.authToken);
+        localStorage.setItem("email", res.email);
         router.push("/");
       })
       .catch((error) => {
@@ -305,9 +306,9 @@ const GoogleAuthPage: React.FC<GoogleAuthPageProps> = ({
   if (twoFAEnabled === undefined) return null;
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-base-200">
-      <div className="card w-96 bg-base-100 shadow-xl p-6">
-        <h2 className={`text-2xl font-bold text-center mb-3`}>
+    <div className="flex min-h-screen items-center justify-center bg-base-200">
+      <div className="card w-96 bg-base-100 p-6 shadow-xl">
+        <h2 className={`mb-3 text-center text-2xl font-bold`}>
           Enter authentication code.
         </h2>
         <img
@@ -333,15 +334,15 @@ const GoogleAuthPage: React.FC<GoogleAuthPageProps> = ({
               },
             })}
           />
-          <span className="text-error text-sm">{errors.code?.message}</span>
+          <span className="text-sm text-error">{errors.code?.message}</span>
           <button
-            className="btn btn-block btn-primary mt-2"
+            className="btn btn-primary btn-block mt-2"
             disabled={isLoading}
           >
             Submit
           </button>
         </form>
-        <p className="text-center mt-3 lg:mt-4 text-sm">
+        <p className="mt-3 text-center text-sm lg:mt-4">
           *Do not refresh until done.
         </p>
       </div>

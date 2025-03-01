@@ -13,7 +13,9 @@ export const baseAPI = createApi({
     credentials: "include",
     prepareHeaders: (headers) => {
       const authToken = localStorage.getItem("authToken");
+      const email = localStorage.getItem("email");
       if (authToken) headers.set("authToken", authToken);
+      if (email) headers.set("email", email);
       return headers;
     },
   }),
