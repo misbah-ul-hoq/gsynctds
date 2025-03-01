@@ -14,6 +14,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { FaArrowDown, FaArrowUp } from "react-icons/fa";
 import { RiArrowDropDownLine } from "react-icons/ri";
+import { useDispatch } from "react-redux";
 import Swal from "sweetalert2";
 import truncate from "truncate";
 
@@ -65,28 +66,53 @@ const NotesPage = () => {
   });
 
   // redux hooks
+  const dispatch = useDispatch();
   const [addEvent, { isLoading }] = useAddEventMutation();
   const [syncDelete] = useSyncDeleteMutation();
   const [syncPost] = useSyncPostMutation();
   const [deleteEvent] = useDeleteEventMutation();
   const { data: events, isLoading: isLoadingEvents } = useGetEventsQuery();
 
-  console.log(events);
-
   useEffect(() => {
     if (session?.accessToken) {
       syncDelete({ accessToken: session?.accessToken }).unwrap();
     }
-    // we need to call the syncpost api at least once when the events are empty on database.
-    fetch(`${baseURL}/events/sync`, {
-      method: "POST",
-      headers: {
-        authToken: localStorage.getItem("authToken") || "",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ accessToken: session?.accessToken }),
-    });
-  }, [session?.accessToken]);
+
+    const syncAllPost = async () => {
+      try {
+        // Always call the API, even if events are empty
+        if (events?.length) {
+          await Promise.all(
+            events.map((event) =>
+              syncPost({
+                _id: event._id,
+                accessToken: session?.accessToken,
+              }).unwrap(),
+            ),
+          );
+        } else {
+          // Call API with an empty payload if there are no events
+          await syncPost({
+            _id: null,
+            accessToken: session?.accessToken,
+          }).unwrap();
+        }
+
+        console.log("All sync requests completed!");
+      } catch (error) {
+        console.error("Error syncing posts:", error);
+      }
+    };
+
+    syncAllPost();
+  }, [
+    session?.accessToken,
+    events,
+    dispatch,
+    syncDelete,
+    syncPost,
+    isLoadingEvents,
+  ]);
   const postNewEvent = async () => {
     // post event to database
     addEvent({ ...event })
@@ -136,37 +162,37 @@ const NotesPage = () => {
     }
   };
 
-  useEffect(() => {
-    async function getCalendarEvents(accessToken: string) {
-      const calendarId = "primary";
-      const url = `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events`;
-      try {
-        const response = await fetch(url, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            Accept: "application/json",
-          },
-        });
+  // useEffect(() => {
+  //   async function getCalendarEvents(accessToken: string) {
+  //     const calendarId = "primary";
+  //     const url = `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events`;
+  //     try {
+  //       const response = await fetch(url, {
+  //         method: "GET",
+  //         headers: {
+  //           Authorization: `Bearer ${accessToken}`,
+  //           Accept: "application/json",
+  //         },
+  //       });
 
-        if (!response.ok) {
-          throw new Error(`Error: ${response.status} ${response.statusText}`);
-        }
+  //       if (!response.ok) {
+  //         throw new Error(`Error: ${response.status} ${response.statusText}`);
+  //       }
 
-        const data = await response.json();
-        console.log("Events:", data.items);
-        setCalendarEvents(data.items);
-        return data.items;
-      } catch (error) {
-        console.error("Error fetching calendar events:", error);
-        return [];
-      }
-    }
+  //       const data = await response.json();
+  //       console.log("Events:", data.items);
+  //       setCalendarEvents(data.items);
+  //       return data.items;
+  //     } catch (error) {
+  //       console.error("Error fetching calendar events:", error);
+  //       return [];
+  //     }
+  //   }
 
-    if (session?.accessToken) {
-      getCalendarEvents(session?.accessToken);
-    }
-  }, [session?.accessToken]);
+  //   if (session?.accessToken) {
+  //     getCalendarEvents(session?.accessToken);
+  //   }
+  // }, [session?.accessToken]);
 
   return (
     <div className="my-4">
@@ -376,16 +402,12 @@ const EventCard = ({ event }: { event: EvetCardProps }) => {
     session?.user && session?.accessToken,
   );
   useEffect(() => {
-    if (session?.user && session?.accessToken) {
-      syncPost({
-        ...event,
-        accessToken: session?.accessToken,
-      }).unwrap();
-      // postNewEventToGoogleCalendar({
-      //   ...event,
-      //   accessToken: session?.accessToken,
-      // });
-    }
+    // if (session?.user && session?.accessToken) {
+    //   syncPost({
+    //     ...event,
+    //     accessToken: session?.accessToken,
+    //   }).unwrap();
+    // }
   }, []);
 
   return (
