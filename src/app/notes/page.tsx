@@ -10,6 +10,7 @@ import {
 } from "@/redux/features/events/eventApiSlice";
 import moment from "moment";
 import { useSession } from "next-auth/react";
+import { redirect } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -35,18 +36,7 @@ type EventType = {
 };
 const NotesPage = () => {
   const { data: session } = useSession();
-  const [calendarEvents] = useState<
-    | {
-        id: string;
-        summary: string;
-        description: string;
-        start: { dateTime: string };
-        end: { dateTime: string };
-        status: string;
-        priority: string;
-      }[]
-    | null
-  >(null);
+  const [auth, setAuth] = useState<undefined | null | string>();
   const [showEventForm, setShowEventForm] = useState(false);
   const [start, setStart] = useState(new Date());
   const [end, setEnd] = useState(new Date());
@@ -73,7 +63,12 @@ const NotesPage = () => {
   const [eventsCount] = useGetEventsCountMutation();
   const [syncPostCompleted, setSyncPostCompleted] = useState(false);
 
+  if (typeof auth !== undefined && auth === null) {
+    redirect("/login");
+  }
+
   useEffect(() => {
+    setAuth(localStorage.getItem("authToken"));
     const syncAllPost = async () => {
       try {
         // Always call the API, even if events are empty
@@ -293,37 +288,7 @@ const NotesPage = () => {
         </div>
       </div>
 
-      <div className="mt-7">
-        {Array.isArray(calendarEvents) && calendarEvents?.length === 0 && (
-          <h2 className="mb-3 text-2xl font-bold">No events. Start creating</h2>
-        )}
-
-        {Array.isArray(calendarEvents) && calendarEvents?.length > 0 && (
-          <h2 className="mb-3 text-2xl font-bold">
-            Events through Google Calendar
-          </h2>
-        )}
-
-        {/* showing calendar events */}
-        {/* <div className="grid gap-3 lg:grid-cols-3">
-          {Array.isArray(calendarEvents) &&
-            calendarEvents?.map((event) => (
-              <EventCard
-                key={event.id}
-                event={{
-                  accessToken: session?.accessToken,
-                  id: event.id,
-                  _id: event.id,
-                  summary: event.summary,
-                  description: event.description,
-                  start: event.start,
-                  end: event.end,
-                  status: event.status,
-                }}
-              />
-            ))}
-        </div> */}
-      </div>
+      <div className="mt-7"></div>
     </div>
   );
 };
