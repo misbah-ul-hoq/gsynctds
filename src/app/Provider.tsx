@@ -1,21 +1,21 @@
 "use client";
 import Sidebar from "@/components/layout/Sidebar";
 import store from "@/redux/store";
-import React, { ReactNode, useEffect, useState } from "react";
+import React, { ReactNode } from "react";
 import { Provider } from "react-redux";
 import { SessionProvider } from "next-auth/react";
+import { usePathname } from "next/navigation";
 const StoreProvider = ({ children }: { children: ReactNode }) => {
-  const [authToken, setAuthToken] = useState<undefined | null | string>();
-  useEffect(() => {
-    const token = localStorage.getItem("authToken");
-    if (token) setAuthToken(token);
-  }, []);
+  const pathName = usePathname();
+  const isAuthPage =
+    pathName.includes("/login") || pathName.includes("/signup");
+
   return (
     <SessionProvider>
       <Provider store={store}>
         <div className={`flex gap-5 lg:grid-cols-12`}>
           <div
-            className={`lg:col-span-3 lg:w-[250px] ${!authToken && "hidden"}`}
+            className={`lg:col-span-3 lg:w-[250px] ${isAuthPage && "hidden"}`}
           >
             <Sidebar />
           </div>
