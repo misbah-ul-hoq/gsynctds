@@ -111,7 +111,6 @@ const NotesPage = () => {
       eventsCount({ accessToken: session?.accessToken })
         .unwrap()
         .then((res) => {
-          console.log(res);
           if (res.shouldSync && syncPostCompleted) {
             syncDelete({ accessToken: session?.accessToken })
               .unwrap()
@@ -138,7 +137,6 @@ const NotesPage = () => {
           icon: "success",
           title: "Event created successfully",
         });
-        // window.location.reload();
       })
       .catch(() => {});
   };
