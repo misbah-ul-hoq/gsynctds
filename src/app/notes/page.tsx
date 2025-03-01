@@ -66,7 +66,6 @@ const NotesPage = () => {
   });
 
   // redux hooks
-  const dispatch = useDispatch();
   const [addEvent, { isLoading }] = useAddEventMutation();
   const [syncDelete] = useSyncDeleteMutation();
   const [syncPost] = useSyncPostMutation();
@@ -105,14 +104,7 @@ const NotesPage = () => {
     };
 
     syncAllPost();
-  }, [
-    session?.accessToken,
-    events,
-    dispatch,
-    syncDelete,
-    syncPost,
-    isLoadingEvents,
-  ]);
+  }, [session?.accessToken, events, syncDelete, syncPost, isLoadingEvents]);
   const postNewEvent = async () => {
     // post event to database
     addEvent({ ...event })
